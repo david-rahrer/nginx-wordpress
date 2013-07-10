@@ -36,13 +36,6 @@ server {
     try_files $uri $uri/ /index.php?$args;
   }
 
-  location /doc/ {
-	alias /usr/share/doc/;
-	autoindex on;
-	allow 127.0.0.1;
-	deny all;
-  }
-
   # Do not log access to the favicon, to keep the logs cleaner
   location = /favicon.ico {
     log_not_found off;
