@@ -91,10 +91,6 @@ server {
     internal;
   }
 
-  location /wp-includes/ {
-    internal;
-  }
-
   # Prevent any potentially-executable files in the uploads directory from
   # being executed by forcing their MIME type to text/plain
   location ~* ^/wp-content/uploads/.*.(html|htm|shtml|php)$ {
