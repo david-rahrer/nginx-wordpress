@@ -46,18 +46,18 @@ server {
   # The ?: prefix is a 'non-capturing' mark, meaning we do not require
   # the pattern to be captured into $1 which should help improve performance
   location ~* \.(?:ico|css|js|gif|jpe?g|png)$ {
-	# Some basic cache-control for static files to be sent to the browser
-	expires max;
-	add_header Pragma public;
-	add_header Cache-Control "public, must-revalidate, proxy-revalidate";
+    # Some basic cache-control for static files to be sent to the browser
+    expires max;
+    add_header Pragma public;
+    add_header Cache-Control "public, must-revalidate, proxy-revalidate";
   }
 
   # Deny all attempts to access hidden files such as .htaccess, .htpasswd, .DS_Store (Mac).
   # Keep logging the requests to parse later (or to pass to firewall utilities such as fail2ban)
   location ~ /\. {
-	access_log off;
-	log_not_found off;
-	deny all;
+    access_log off;
+    log_not_found off;
+    deny all;
   }
 
   location ~ ~$ {
@@ -91,32 +91,32 @@ server {
     default_type text/plain;
   }
 
-	#error_page 404 /404.html;
+    #error_page 404 /404.html;
 
-	# redirect server error pages to the static page /50x.html
-	#
-	#error_page 500 502 503 504 /50x.html;
-	#location = /50x.html {
-	#	root /usr/share/nginx/www;
-	#}
+    # redirect server error pages to the static page /50x.html
+    #
+    #error_page 500 502 503 504 /50x.html;
+    #location = /50x.html {
+    #   root /usr/share/nginx/www;
+    #}
 
-	# pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
-	#
+    # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
+    #
 
   location ~ \.php$ {
     fastcgi_split_path_info ^(.+\.php)(/.+)$;
     # NOTE: You should have "cgi.fix_pathinfo = 0;" in php.ini
-	fastcgi_pass unix:/var/run/example.com.sock;
-	fastcgi_index index.php;
-	include fastcgi_params;
-	}
+    fastcgi_pass unix:/var/run/example.com.sock;
+    fastcgi_index index.php;
+    include fastcgi_params;
+    }
 
   # Use this block if PHPMyAdmin is enabled for this domain
   location /phpmyadmin {
     root /usr/share/;
     index index.php index.html index.htm;
 
-	location ~ ^/phpmyadmin/(.+\.php)$ {
+    location ~ ^/phpmyadmin/(.+\.php)$ {
       try_files $uri =404;
       root /usr/share/;
       fastcgi_pass unix:/var/example.com.sock;
@@ -134,4 +134,4 @@ server {
     rewrite ^/* /phpmyadmin last;
   }
 
-}  # End of server block.
+} # End of server block.
