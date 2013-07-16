@@ -84,13 +84,12 @@ server {
     internal;
   }
 
-  # Prevent any potentially-executable files in the uploads directory from
-  # being executed by forcing their MIME type to text/plain
-  location ~* ^/wp-content/uploads/.*.(html|htm|shtml|php)$ {
-    types { }
-    default_type text/plain;
+  # Deny access to any files with a .php extension in the uploads directory
+  # Works in sub-directory installs and also in multisite network
+  # Keep logging the requests to parse later (or to pass to firewall utilities such as fail2ban)
+  location ~* /(?:uploads|files)/.*\.php$ {
+	  deny all;
   }
-
     #error_page 404 /404.html;
 
     # redirect server error pages to the static page /50x.html
