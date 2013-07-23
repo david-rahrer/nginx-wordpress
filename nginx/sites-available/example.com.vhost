@@ -103,6 +103,11 @@ server {
   location = /sitemap.xml.gz {
     try_files $uri /index.php;
   }
+
+  # Fix for Firefox issue with cross site font icons
+  location ~* \.(eot|otf|ttf|woff)$ {
+    add_header Access-Control-Allow-Origin *;
+  }
   
     #error_page 404 /404.html;
 
