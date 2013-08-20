@@ -14,6 +14,7 @@ server {
 
   root /srv/www/example.com/htdocs;
   index index.php index.html index.htm;
+  charset UTF-8;
   autoindex off;
 
   # Show "Not Found" 404 errors in place of "Forbidden" 403 errors, because
