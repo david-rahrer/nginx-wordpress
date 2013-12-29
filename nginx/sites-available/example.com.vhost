@@ -8,13 +8,17 @@ server {
   listen 80; # listen for ipv4; this line is default and implied
   #listen 443 ssl;
   server_name www.example.com;
-  
+
   #ssl_certificate /srv/www/example.com/ssl/www.example.com.crt;
   #ssl_certificate_key /srv/www/example.com/ssl/www.example.com.key;
+  # Allow multiple connections to use the same key data
+  ssl_session_cache    shared:SSL:10m;
+  ssl_session_timeout  10m;
   # Enables SSLv3/TLSv1, but not SSLv2 which is weak and should no longer be used.
   ssl_protocols SSLv3 TLSv1;
   # Disables all weak ciphers
-  ssl_ciphers ALL:!aNULL:!ADH:!eNULL:!LOW:!EXP:RC4+RSA:+HIGH:+MEDIUM;
+  ssl_ciphers ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv3:+EXP;
+  ssl_prefer_server_ciphers on;
 
   root /srv/www/example.com/htdocs;
   index index.php index.html index.htm;
@@ -102,7 +106,7 @@ server {
   location ~* /(?:uploads|files)/.*\.php$ {
 	  deny all;
   }
-  
+
   # Make sure these get through, esp with dynamic WP sitmap plugin
   location = /robots.txt {
     try_files $uri /index.php;
@@ -120,7 +124,7 @@ server {
   location ~* \.(eot|otf|ttf|woff)$ {
     add_header Access-Control-Allow-Origin *;
   }
-  
+
     #error_page 404 /404.html;
 
     # redirect server error pages to the static page /50x.html
@@ -133,13 +137,44 @@ server {
     # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
     #
 
+  # Cache everything by default
+  set $skip_cache 0;
+
+	# POST requests and urls with a query string should always go to PHP
+	if ($request_method = POST) {
+		set $skip_cache 1;
+	}
+	if ($query_string != "") {
+		set $skip_cache 1;
+	}
+
+	# Don't cache uris containing the following segments
+	if ($request_uri ~* "/wp-admin/|/xmlrpc.php|wp-.*.php|/feed/|index.php|sitemap(_index)?.xml") {
+		set $skip_cache 1;
+	}
+
+	# Don't use the cache for logged in users or recent commenters
+	if ($http_cookie ~* "comment_author|wordpress_[a-f0-9]+|wp-postpass|wordpress_no_cache|wordpress_logged_in") {
+		set $skip_cache 1;
+	}
+
   location ~ \.php$ {
     fastcgi_split_path_info ^(.+\.php)(/.+)$;
     # NOTE: You should have "cgi.fix_pathinfo = 0;" in php.ini
     fastcgi_pass unix:/var/run/example.com.sock;
     fastcgi_index index.php;
     include fastcgi_params;
+
+    fastcgi_cache_bypass $skip_cache;
+	  fastcgi_no_cache $skip_cache;
+
+		fastcgi_cache WORDPRESS;
+		fastcgi_cache_valid  60m;
     }
+
+	location ~ /purge(/.*) {
+	  fastcgi_cache_purge WORDPRESS "$scheme$request_method$host$1";
+	}
 
   # Use this block if PHPMyAdmin is enabled for this domain
   location /phpmyadmin {
