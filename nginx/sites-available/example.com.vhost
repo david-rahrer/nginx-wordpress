@@ -11,9 +11,10 @@ server {
   
   #ssl_certificate /srv/www/example.com/ssl/www.example.com.crt;
   #ssl_certificate_key /srv/www/example.com/ssl/www.example.com.key;
-  # Allow multiple connections to use the same key data
-  ssl_session_cache    shared:SSL:10m;
-  ssl_session_timeout  10m;
+  # Enables SSLv3/TLSv1, but not SSLv2 which is weak and should no longer be used.
+  ssl_protocols SSLv3 TLSv1;
+  # Disables all weak ciphers
+  ssl_ciphers ALL:!aNULL:!ADH:!eNULL:!LOW:!EXP:RC4+RSA:+HIGH:+MEDIUM;
 
   root /srv/www/example.com/htdocs;
   index index.php index.html index.htm;
