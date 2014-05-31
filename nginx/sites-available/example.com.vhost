@@ -130,17 +130,11 @@ server {
     add_header Access-Control-Allow-Origin *;
   }
   
-    #error_page 404 /404.html;
-
-    # redirect server error pages to the static page /50x.html
-    #
-    #error_page 500 502 503 504 /50x.html;
-    #location = /50x.html {
-    #   root /usr/share/nginx/www;
-    #}
-
-    # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
-    #
+  # redirect server error pages to the static page /50x.html
+  error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+    root /usr/share/nginx/www;
+  }
 
   location ~ \.php$ {
     fastcgi_split_path_info ^(.+\.php)(/.+)$;
@@ -148,7 +142,7 @@ server {
     fastcgi_pass unix:/var/run/example.com.sock;
     fastcgi_index index.php;
     include fastcgi_params;
-    }
+  }
 
   # Use this block if PHPMyAdmin is enabled for this domain
   location /phpmyadmin {
