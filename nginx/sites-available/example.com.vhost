@@ -134,7 +134,7 @@ server {
   # make sure 50x.html exists at that location
   error_page 500 502 503 504 /50x.html;
     location = /50x.html {
-    root /usr/share/nginx/www;
+    root /usr/share/nginx/html;
     }
 
   # Cache everything by default
