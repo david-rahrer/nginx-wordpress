@@ -1,13 +1,13 @@
 server {
   listen 80;
-  server_name example.com;
-  return 301 $scheme://www.example.com$request_uri;
+  server_name www.example.com;
+  return 301 $scheme://example.com$request_uri;
 }
 
 server {
-  listen 80; # listen for ipv4; this line is default and implied
-  #listen 443 ssl;
-  server_name www.example.com;
+  listen [::]:80 ipv6only=off;
+  #listen [::]:443 ipv6only=off ssl;#listen 443 ssl;
+  server_name example.com;
 
   #ssl_certificate /srv/www/example.com/ssl/www.example.com.crt;
   #ssl_certificate_key /srv/www/example.com/ssl/www.example.com.key;
