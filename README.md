@@ -1,7 +1,7 @@
 nginx-wordpress
 ===============
 
-Nginx and PHP-FPM configuration for Wordpress install. Current work goes into "optimized" branch and is merged to master periodically.
+Nginx and PHP-FPM configuration for Wordpress install. Current work goes into "optimized" branch and is merged to master periodically. MySQL configs are designed for MariaDB on low resource VPS such as Digital Ocean $5 - $20 droplet. Some chnages would be needed for more robust systems. Nginx and PHP should work as configured on wide range of systems.
 
 To Do
 =====
