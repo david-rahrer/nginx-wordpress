@@ -1,3 +1,4 @@
+# Move the www people to no-www
 server {
   listen 80;
   server_name www.example.com;
@@ -28,7 +29,7 @@ server {
   # Show "Not Found" 404 errors in place of "Forbidden" 403 errors, because
   # forbidden errors allow attackers potential insight into your server's
   # layout and contents
-  error_page 403 =404;
+  error_page 403 = 404;
 
   # It's always good to set logs, note however you cannot turn off the error log
   # setting error_log off; will simply create a file called 'off'.
@@ -135,8 +136,8 @@ server {
     add_header Access-Control-Allow-Origin *;
   }
 
-  # redirect server error pages to the static page /50x.html
-  # make sure 50x.html exists at that location
+  # Redirect server error pages to the static page /50x.html
+  # Make sure 50x.html exists at that location
   error_page 500 502 503 504 /50x.html;
     location = /50x.html {
     root /usr/share/nginx/html;
