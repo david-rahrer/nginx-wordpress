@@ -203,7 +203,6 @@ server {
       root /usr/share/;
       fastcgi_pass unix:/var/run/example.com.sock;
       fastcgi_index index.php;
-      fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
       include fastcgi.conf;
     }
 
@@ -215,5 +214,6 @@ server {
   location /phpMyAdmin {
     rewrite ^/* /phpmyadmin last;
   }
+  # End PHPMyAdmin block
 
 } # End of server block.
