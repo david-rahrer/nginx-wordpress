@@ -1,29 +1,57 @@
+# Move the www people to no-www
 server {
   listen 80;
-  server_name example.com;
-  return 301 $scheme://www.example.com$request_uri;
+  server_name www.example.com;
+  return 301 $scheme://example.com$request_uri;
 }
 
 server {
-  listen 80; # listen for ipv4; this line is default and implied
-  #listen 443 ssl;
-  server_name www.example.com;
+  listen 80;
+  listen 443 ssl;
+  server_name example.com;
 
-  #ssl_certificate /srv/www/example.com/ssl/www.example.com.crt;
-  #ssl_certificate_key /srv/www/example.com/ssl/www.example.com.key;
+  # Certs sent to the client in SERVER HELLO are concatenated in ssl_certificate
+  ssl_certificate /srv/www/example.com/ssl/example.com.crt;
+  ssl_certificate_key /srv/www/example.com/ssl/example.com.key;
+  
   # Allow multiple connections to use the same key data
-  ssl_session_cache    shared:SSL:10m;
-  ssl_session_timeout  10m;
+  ssl_session_timeout 5m;
+  ssl_session_cache shared:SSL:50m;
+  
+  # Diffie-Hellman parameter for DHE ciphersuites, recommended 2048 bits
+  ssl_dhparam /etc/ssl/certs/dhparam.pem;
+
+  # Intermediate configuration. tweak to your needs
+  ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+  include snippets/ssl_ciphers_intermediate.conf;
+  ssl_prefer_server_ciphers on;
+
+  # HSTS (ngx_http_headers_module is required) (15768000 seconds = 6 months)
+  #add_header Strict-Transport-Security max-age=15768000;
+
+  # OCSP Stapling - fetch OCSP records from URL in ssl_certificate and cache them
+  ssl_stapling on;
+  ssl_stapling_verify on;
+
+  # Verify chain of trust of OCSP response using Root CA and Intermediate certs
+  ssl_trusted_certificate /srv/www/example.com/ssl/unified-ssl.crt;
+  resolver 8.8.8.8 8.8.4.4;
+  resolver_timeout 10s;
 
   root /srv/www/example.com/htdocs;
   index index.php index.html index.htm;
   charset UTF-8;
   autoindex off;
+  
+  # Deny access based on HTTP method (set in HTTP level)
+  if ($bad_method = 1) {
+    return 444;
+  }
 
   # Show "Not Found" 404 errors in place of "Forbidden" 403 errors, because
   # forbidden errors allow attackers potential insight into your server's
   # layout and contents
-  error_page 403 =404;
+  error_page 403 = 404;
 
   # It's always good to set logs, note however you cannot turn off the error log
   # setting error_log off; will simply create a file called 'off'.
@@ -130,10 +158,11 @@ server {
     add_header Access-Control-Allow-Origin *;
   }
 
-  # redirect server error pages to the static page /50x.html
+  # Redirect server error pages to the static page /50x.html
+  # Make sure 50x.html exists at that location
   error_page 500 502 503 504 /50x.html;
     location = /50x.html {
-    root /usr/share/nginx/www;
+    root /usr/share/nginx/html;
     }
 
   # Cache everything by default
@@ -158,19 +187,24 @@ server {
   }
 
   # Pass all .php files onto a php-fpm/php-fcgi server.
-  location ~ \.php$ {
-  # Zero-day exploit defence.
-	# http://forum.nginx.org/read.php?2,88845,page=3
-	# Won't work properly (404 error) if the file is not stored on this server, which is entirely possible with php-fpm/php-fcgi.
-	# Comment the 'try_files' line out if you set up php-fpm/php-fcgi on another machine.  And then cross your fingers that you won't get hacked.
-	try_files $uri =404;
-	
+  location ~ [^/]\.php(/|$) {
+    # regex to split $uri to $fastcgi_script_name and $fastcgi_path
     fastcgi_split_path_info ^(.+\.php)(/.+)$;
-    # NOTE: You should have "cgi.fix_pathinfo = 0;" in php.ini
+
+    # Check that the PHP script exists before passing it
+    try_files $fastcgi_script_name =404;
+
+    # Bypass the fact that try_files resets $fastcgi_path_info
+    # see: http://trac.nginx.org/nginx/ticket/321
+    set $path_info $fastcgi_path_info;
+    fastcgi_param PATH_INFO $path_info;
+
     fastcgi_pass unix:/var/run/example.com.sock;
     fastcgi_index index.php;
-    include fastcgi_params;
-
+    # Uncomment if site is HTTPS
+    #fastcgi_param HTTPS on;
+    include fastcgi.conf;
+    
     fastcgi_cache_bypass $skip_cache;
     fastcgi_no_cache $skip_cache;
 
@@ -192,8 +226,7 @@ server {
       root /usr/share/;
       fastcgi_pass unix:/var/run/example.com.sock;
       fastcgi_index index.php;
-      fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-      include /etc/nginx/fastcgi_params;
+      include fastcgi.conf;
     }
 
     location ~* ^/phpmyadmin/(.+\.(jpg|jpeg|gif|css|png|js|ico|html|xml|txt))$ {
@@ -204,5 +237,6 @@ server {
   location /phpMyAdmin {
     rewrite ^/* /phpmyadmin last;
   }
+  # End PHPMyAdmin block
 
 } # End of server block.
