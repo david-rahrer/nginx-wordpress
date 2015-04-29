@@ -67,6 +67,11 @@ server {
     # turn it on once you've gotten Wordpress configured!
     try_files $uri $uri/ /index.php?$args;
   }
+  
+  # Protect theme backups created by Envato Toolkit
+  location ~ ^/wp-content/envato-backups/(.*?)\.zip$ {
+    rewrite / permanent;
+  }
 
   # Option to create password protected directory
   # http://www.howtoforge.com/basic-http-authentication-with-nginx
