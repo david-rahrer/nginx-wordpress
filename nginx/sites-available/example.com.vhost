@@ -221,7 +221,7 @@ server {
     fastcgi_cache_purge WORDPRESS "$scheme$request_method$host$1";
   }
 
-  # Use this block if PHPMyAdmin is enabled for this domain
+  # Use this block if PHPMyAdmin is enabled for domain.com
   location /phpmyadmin {
     root /usr/share/;
     index index.php index.html index.htm;
