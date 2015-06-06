@@ -131,6 +131,12 @@ server {
     internal; 
   }
   
+  # Caution, this may cause issues with some plugins that require downloads (such as podcasts).
+  # Check this if any issues are encountered along those lines that make no sense.
+  location /wp-content/ {
+    internal;
+  }
+  
   # Protect the wp-config.php file
   location ~* wp-config.php { 
     deny all; 
