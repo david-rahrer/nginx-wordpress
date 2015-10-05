@@ -1,8 +1,8 @@
 # Move the www people to no-www
 server {
   listen 80;
-  server_name www.domain.com;
-  return 301 $scheme://domain.com$request_uri;
+  server_name www.domain.com domain.com;
+  return 301 https://domain.com$request_uri;
 }
 
 server {
