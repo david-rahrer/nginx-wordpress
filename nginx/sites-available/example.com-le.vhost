@@ -54,6 +54,11 @@ server {
   location ~ ^/wp-content/envato-backups/(.*?)\.zip$ {
     rewrite / permanent;
   }
+  
+  # allow Let's Encrypt client authentication - letsencrypt.org
+  location ~ /.well-known {
+    allow all;
+  }
 
   # Do not log access to these to keep the logs cleaner
   location = /favicon.ico {
