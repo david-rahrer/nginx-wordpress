@@ -196,5 +196,8 @@ server {
   location ~ /purge(/.*) {
     fastcgi_cache_purge WORDPRESS "$scheme$request_method$host$1";
   }
-
+  
+  # Uncomment if PHPMyAdmin is needed
+  #include snippets/phpmyadmin.conf;
+  
 } # End of server block.
