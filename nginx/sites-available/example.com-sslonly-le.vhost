@@ -71,17 +71,7 @@ server {
   }
 
   # Do not log access to these to keep the logs cleaner
-  location = /favicon.ico {
-    log_not_found off;
-    access_log off;
-  }
-
-  location = /apple-touch-icon.png {
-    log_not_found off;
-    access_log off;
-  }
-
-  location = /apple-touch-icon-precomposed.png {
+  location ~ ^/(favicon.ico|apple-touch-icon.png|apple-touch-icon-precomposed.png)/ {
     log_not_found off;
     access_log off;
   }
@@ -141,15 +131,7 @@ server {
   }
 
   # Make sure these get through, esp with dynamic WP sitmap plugin
-  location = /robots.txt {
-    try_files $uri /index.php;
-  }
-
-  location = /sitemap.xml {
-    try_files $uri /index.php;
-  }
-
-  location = /sitemap.xml.gz {
+  location ~ ^/(robots.txt|sitemap.xml|sitemap.xml.gz)/ {
     try_files $uri /index.php;
   }
 
@@ -163,7 +145,7 @@ server {
   error_page 500 502 503 504 /50x.html;
     location = /50x.html {
     root /usr/share/nginx/html;
-    }
+  }
 
   # Cache everything by default
   set $skip_cache 0;
