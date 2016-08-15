@@ -2,23 +2,33 @@
 server {
   listen 80;
   listen [::]:80;
-  server_name www.domain.com;
-  return 301 $scheme://domain.com$request_uri;
+  server_name www.domain.com domain.com;
+  return 301 https://domain.com$request_uri;
 }
 
 server {
-  listen 80;
-  listen [::]:80;
   listen 443 ssl;
   listen [::]:443 ssl;
-  server_name domain.com;
-
+  server_name www.domain.com;
+  
   # Certs sent to the client in SERVER HELLO are concatenated in ssl_certificate
-  ssl_certificate /srv/www/domain.com/ssl/domain.com.crt;
-  ssl_certificate_key /srv/www/domain.com/ssl/domain.com.key;
+  ssl_certificate /etc/letsencrypt/live/domain.com/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/domain.com/privkey.pem;
+  
+  return 301 https://domain.com$request_uri;
+}
+
+server {
+  listen 443 ssl spdy;
+  listen [::]:443 ssl spdy;
+  server_name domain.com;
+  
+  # Certs sent to the client in SERVER HELLO are concatenated in ssl_certificate
+  ssl_certificate /etc/letsencrypt/live/domain.com/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/domain.com/privkey.pem;
   
   # Verify chain of trust of OCSP response using Root CA and Intermediate certs
-  ssl_trusted_certificate /srv/www/domain.com/ssl/unified-ssl.crt;
+  ssl_trusted_certificate /etc/letsencrypt/live/domain.com/fullchain.pem;
 
   root /srv/www/domain.com/htdocs;
   index index.php index.html index.htm;
@@ -53,6 +63,11 @@ server {
   # Protect theme backups created by Envato Toolkit
   location ~ ^/wp-content/envato-backups/(.*?)\.zip$ {
     rewrite / permanent;
+  }
+  
+  # allow Let's Encrypt client authentication - letsencrypt.org
+  location ~ /.well-known {
+    allow all;
   }
 
   # Do not log access to these to keep the logs cleaner
@@ -186,8 +201,7 @@ server {
 
     fastcgi_pass unix:/var/run/domain.com.sock;
     fastcgi_index index.php;
-    # Uncomment if site is HTTPS
-    #fastcgi_param HTTPS on;
+    fastcgi_param HTTPS on;
     include fastcgi.conf;
     
     fastcgi_cache_bypass $skip_cache;
