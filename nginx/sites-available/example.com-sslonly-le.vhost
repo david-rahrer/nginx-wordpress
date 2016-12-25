@@ -162,6 +162,26 @@ server {
   if ($http_cookie ~* "comment_author|wordpress_[a-f0-9]+|wp-postpass|wordpress_no_cache|wordpress_logged_in") {
     set $skip_cache 1;
   }
+  
+  # Fix to make "purge" button in Nginx Helper plugin work
+  # More secure (also disables caching for backend)
+  location ~ ^/wp-admin/.*\.php$ {
+    fastcgi_split_path_info ^(.+\.php)(/.+)$;
+    try_files $fastcgi_script_name =404;
+    
+    set $user 'domain.com';
+    if ( $args ~ 'nginx_helper_urls=all' ) { set $user 'www-data'; }
+    
+    set $path_info $fastcgi_path_info;
+    fastcgi_param PATH_INFO $path_info;
+
+    # Admin still needs to run as regular user as well
+    fastcgi_pass unix:/var/run/$user.sock;
+    fastcgi_param HTTPS on;
+    fastcgi_index  index.php;
+
+    include fastcgi.conf;
+  }
 
   # Pass all .php files onto a php-fpm/php-fcgi server.
   location ~ [^/]\.php(/|$) {
