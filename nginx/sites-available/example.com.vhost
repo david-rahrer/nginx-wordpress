@@ -2,23 +2,33 @@
 server {
   listen 80;
   listen [::]:80;
-  server_name www.domain.com;
-  return 301 $scheme://domain.com$request_uri;
+  server_name www.domain.com domain.com;
+  return 301 https://domain.com$request_uri;
 }
 
 server {
-  listen 80;
-  listen [::]:80;
   listen 443 ssl;
   listen [::]:443 ssl;
-  server_name domain.com;
-
+  server_name www.domain.com;
+  
   # Certs sent to the client in SERVER HELLO are concatenated in ssl_certificate
-  ssl_certificate /srv/www/domain.com/ssl/domain.com.crt;
-  ssl_certificate_key /srv/www/domain.com/ssl/domain.com.key;
+  ssl_certificate /etc/ssl/domain.com/domain.com.crt;
+  ssl_certificate_key /etc/ssl/domain.com/domain.com.key;
+  
+  return 301 https://domain.com$request_uri;
+}
+
+server {
+  listen 443 ssl spdy;
+  listen [::]:443 ssl spdy;
+  server_name domain.com;
+  
+  # Certs sent to the client in SERVER HELLO are concatenated in ssl_certificate
+  ssl_certificate /etc/ssl/domain.com/domain.com.crt;
+  ssl_certificate_key /etc/ssl/domain.com/domain.com.key;
   
   # Verify chain of trust of OCSP response using Root CA and Intermediate certs
-  ssl_trusted_certificate /srv/www/domain.com/ssl/unified-ssl.crt;
+  ssl_trusted_certificate /etc/ssl/domain.com/domain.com.pem;
 
   root /srv/www/domain.com/htdocs;
   index index.php index.html index.htm;
@@ -54,22 +64,9 @@ server {
   location ~ ^/wp-content/envato-backups/(.*?)\.zip$ {
     rewrite / permanent;
   }
-
+  
   # Do not log access to these to keep the logs cleaner
-  location = /favicon.ico {
-    log_not_found off;
-    access_log off;
-  }
-
-  location = /apple-touch-icon.png {
-    log_not_found off;
-    access_log off;
-  }
-
-  location = /apple-touch-icon-precomposed.png {
-    log_not_found off;
-    access_log off;
-  }
+  location ~ ^/(favicon.ico|apple-touch-icon.png|apple-touch-icon-precomposed.png)/ {
 
   # This block will catch static file requests, such as images, css, js
   # The ?: prefix is a 'non-capturing' mark, meaning we do not require
@@ -126,17 +123,7 @@ server {
   }
 
   # Make sure these get through, esp with dynamic WP sitmap plugin
-  location = /robots.txt {
-    try_files $uri /index.php;
-  }
-
-  location = /sitemap.xml {
-    try_files $uri /index.php;
-  }
-
-  location = /sitemap.xml.gz {
-    try_files $uri /index.php;
-  }
+  location ~ ^/(robots.txt|sitemap.xml|sitemap.xml.gz)/ {
 
   # Fix for Firefox issue with cross site font icons
   location ~* \.(eot|otf|ttf|woff)$ {
@@ -170,6 +157,26 @@ server {
   if ($http_cookie ~* "comment_author|wordpress_[a-f0-9]+|wp-postpass|wordpress_no_cache|wordpress_logged_in") {
     set $skip_cache 1;
   }
+  
+  # Fix to make "purge" button in Nginx Helper plugin work
+  # More secure (also disables caching for backend)
+  location ~ ^/wp-admin/.*\.php$ {
+    fastcgi_split_path_info ^(.+\.php)(/.+)$;
+    try_files $fastcgi_script_name =404;
+    
+    set $user 'domain.com';
+    if ( $args ~ 'nginx_helper_urls=all' ) { set $user 'www-data'; }
+    
+    set $path_info $fastcgi_path_info;
+    fastcgi_param PATH_INFO $path_info;
+
+    # Admin still needs to run as regular user as well
+    fastcgi_pass unix:/var/run/$user.sock;
+    fastcgi_param HTTPS on;
+    fastcgi_index  index.php;
+
+    include fastcgi.conf;
+  }
 
   # Pass all .php files onto a php-fpm/php-fcgi server.
   location ~ [^/]\.php(/|$) {
@@ -186,8 +193,7 @@ server {
 
     fastcgi_pass unix:/var/run/domain.com.sock;
     fastcgi_index index.php;
-    # Uncomment if site is HTTPS
-    #fastcgi_param HTTPS on;
+    fastcgi_param HTTPS on;
     include fastcgi.conf;
     
     fastcgi_cache_bypass $skip_cache;
@@ -201,27 +207,7 @@ server {
     fastcgi_cache_purge WORDPRESS "$scheme$request_method$host$1";
   }
 
-  # Use this block if PHPMyAdmin is enabled for domain.com
-  location /phpmyadmin {
-    root /usr/share/;
-    index index.php index.html index.htm;
-
-    location ~ ^/phpmyadmin/(.+\.php)$ {
-      try_files $uri =404;
-      root /usr/share/;
-      fastcgi_pass unix:/var/run/domain.com.sock;
-      fastcgi_index index.php;
-      include fastcgi.conf;
-    }
-
-    location ~* ^/phpmyadmin/(.+\.(jpg|jpeg|gif|css|png|js|ico|html|xml|txt))$ {
-      root /usr/share/;
-    }
-  }
-
-  location /phpMyAdmin {
-    rewrite ^/* /phpmyadmin last;
-  }
-  # End PHPMyAdmin block
+  # Adds virtual link to Adminer (replacement for PHPMyAdmin)
+  include snippets/adminer.conf;
 
 } # End of server block.
