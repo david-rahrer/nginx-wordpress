@@ -65,11 +65,6 @@ server {
     rewrite / permanent;
   }
   
-  # allow Let's Encrypt client authentication - letsencrypt.org
-  location ~ /.well-known {
-    allow all;
-  }
-
   # Do not log access to these to keep the logs cleaner
   location ~ ^/(favicon.ico|apple-touch-icon.png|apple-touch-icon-precomposed.png)/ {
 
