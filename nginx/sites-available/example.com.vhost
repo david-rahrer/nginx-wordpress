@@ -67,6 +67,9 @@ server {
   
   # Do not log access to these to keep the logs cleaner
   location ~ ^/(favicon.ico|apple-touch-icon.png|apple-touch-icon-precomposed.png)/ {
+    log_not_found off;
+    access_log off;
+  }
 
   # This block will catch static file requests, such as images, css, js
   # The ?: prefix is a 'non-capturing' mark, meaning we do not require
@@ -124,6 +127,8 @@ server {
 
   # Make sure these get through, esp with dynamic WP sitmap plugin
   location ~ ^/(robots.txt|sitemap.xml|sitemap.xml.gz)/ {
+    try_files $uri /index.php;
+  }
 
   # Fix for Firefox issue with cross site font icons
   location ~* \.(eot|otf|ttf|woff)$ {
