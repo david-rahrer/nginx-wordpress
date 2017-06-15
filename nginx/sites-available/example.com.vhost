@@ -165,6 +165,7 @@ server {
   
   # Fix to make "purge" button in Nginx Helper plugin work
   # More secure (also disables caching for backend)
+  # https://github.com/rtCamp/nginx-helper/issues/63#issuecomment-52727971
   location ~ ^/wp-admin/.*\.php$ {
     fastcgi_split_path_info ^(.+\.php)(/.+)$;
     try_files $fastcgi_script_name =404;
