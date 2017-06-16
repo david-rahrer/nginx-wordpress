@@ -10,11 +10,11 @@ server {
   listen 443 ssl;
   listen [::]:443 ssl;
   server_name www.domain.com;
-  
+
   # Certs sent to the client in SERVER HELLO are concatenated in ssl_certificate
   ssl_certificate /etc/ssl/domain.com/domain.com.pem;
   ssl_certificate_key /etc/ssl/domain.com/domain.com.key;
-  
+
   return 301 https://domain.com$request_uri;
 }
 
@@ -22,11 +22,11 @@ server {
   listen 443 ssl http2;
   listen [::]:443 ssl http2;
   server_name domain.com;
-  
+
   # Certs sent to the client in SERVER HELLO are concatenated in ssl_certificate
   ssl_certificate /etc/ssl/domain.com/domain.com.pem;
   ssl_certificate_key /etc/ssl/domain.com/domain.com.key;
-  
+
   # Verify chain of trust of OCSP response using Root CA and Intermediate certs
   ssl_trusted_certificate /etc/ssl/domain.com/domain.com.pem;
 
@@ -34,7 +34,7 @@ server {
   index index.php index.html index.htm;
   charset UTF-8;
   autoindex off;
-  
+
   # Deny access based on HTTP method (set in HTTP level)
   if ($bad_method = 1) {
     return 444;
@@ -59,17 +59,9 @@ server {
     # turn it on once you've gotten Wordpress configured!
     try_files $uri $uri/ /index.php?$args;
   }
-  
-  # Protect theme backups created by Envato Toolkit
-  location ~ ^/wp-content/envato-backups/(.*?)\.zip$ {
-    rewrite / permanent;
-  }
-  
-  # Do not log access to these to keep the logs cleaner
-  location ~ ^/(favicon.ico|apple-touch-icon.png|apple-touch-icon-precomposed.png)/ {
-    log_not_found off;
-    access_log off;
-  }
+
+  # Custom logging and location restrictions for WordPress
+  include snippets/drop-wp.conf;
 
   # This block will catch static file requests, such as images, css, js
   # The ?: prefix is a 'non-capturing' mark, meaning we do not require
@@ -79,55 +71,6 @@ server {
     expires max;
     add_header Pragma public;
     add_header Cache-Control "public, must-revalidate, proxy-revalidate";
-  }
-
-  # Deny all attempts to access hidden files such as .htaccess, .htpasswd, .DS_Store (Mac).
-  # Keep logging the requests to parse later (or to pass to firewall utilities such as fail2ban)
-  location ~ /\. {
-    access_log off;
-    log_not_found off;
-    deny all;
-  }
-
-  location ~ ~$ {
-    access_log off;
-    log_not_found off;
-    deny all;
-  }
-
-  # Common deny or internal locations, to help prevent access to areas of
-  # the site that should not be public
-  location ~* wp-admin/includes {
-    deny all;
-  }
-
-  location ~* wp-includes/theme-compat/ {
-    deny all;
-  }
-
-  location ~* wp-includes/js/tinymce/langs/.*\.php {
-    deny all;
-  }
-  
-  location /wp-includes/ { 
-    internal; 
-  }
-  
-  # Protect the wp-config.php file
-  location ~* wp-config.php { 
-    deny all; 
-  }
-
-  # Deny access to any files with a .php extension in the uploads directory
-  # Works in sub-directory installs and also in multisite network
-  # Keep logging the requests to parse later (or to pass to firewall utilities such as fail2ban)
-  location ~* /(?:uploads|files)/.*\.php$ {
-    deny all;
-  }
-
-  # Make sure these get through, esp with dynamic WP sitmap plugin
-  location ~ ^/(robots.txt|sitemap.xml|sitemap.xml.gz)/ {
-    try_files $uri /index.php;
   }
 
   # Fix for Firefox issue with cross site font icons
@@ -162,17 +105,17 @@ server {
   if ($http_cookie ~* "comment_author|wordpress_[a-f0-9]+|wp-postpass|wordpress_no_cache|wordpress_logged_in") {
     set $skip_cache 1;
   }
-  
+
   # Fix to make "purge" button in Nginx Helper plugin work
   # More secure (also disables caching for backend)
   # https://github.com/rtCamp/nginx-helper/issues/63#issuecomment-52727971
   location ~ ^/wp-admin/.*\.php$ {
     fastcgi_split_path_info ^(.+\.php)(/.+)$;
     try_files $fastcgi_script_name =404;
-    
+
     set $user 'domain.com';
     if ( $args ~ 'nginx_helper_urls=all' ) { set $user 'www-data'; }
-    
+
     set $path_info $fastcgi_path_info;
     fastcgi_param PATH_INFO $path_info;
 
@@ -201,7 +144,7 @@ server {
     fastcgi_index index.php;
     fastcgi_param HTTPS on;
     include fastcgi.conf;
-    
+
     fastcgi_cache_bypass $skip_cache;
     fastcgi_no_cache $skip_cache;
 
